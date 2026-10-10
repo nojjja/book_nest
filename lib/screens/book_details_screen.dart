@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
-import '../widgets/info_row.dart';
 import '../widgets/status_badge.dart';
 
 class BookDetailsScreen extends StatelessWidget {
-  final Book book;
+  final String id; // В адресе путешествует только идентификатор
 
-  const BookDetailsScreen({super.key, required this.book});
+  const BookDetailsScreen({super.key, required this.id});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Шаг 2 ТЗ: Экран сам ищет свой объект по id
+    final book = MockData.books.firstWhere(
+      (b) => b.id == id,
+      orElse: () => MockData.books.first,
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(book.title),
-      ),
+      appBar: AppBar(title: Text(book.title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -29,49 +32,39 @@ class BookDetailsScreen extends StatelessWidget {
                   color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.menu_book,
-                  size: 80,
-                  color: colorScheme.onPrimaryContainer,
-                ),
+                child: Icon(Icons.menu_book, size: 80, color: colorScheme.onPrimaryContainer),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               book.title,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            Text('Автор: ${book.author}', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text('Жанр: ${book.genre}', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            Text('Владелец: ${book.ownerId}', style: TextStyle(color: colorScheme.outline)),
             const SizedBox(height: 16),
-            Card(
-              child: Column(
-                children: [
-                  InfoRow(label: 'Автор', value: book.author, icon: Icons.person_outline),
-                  const Divider(height: 1),
-                  InfoRow(label: 'Жанр', value: book.genre, icon: Icons.category_outlined),
-                  const Divider(height: 1),
-                  InfoRow(label: 'Владелец', value: book.ownerId, icon: Icons.account_circle_outlined),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Expanded(child: Text('Статус')),
-                        StatusBadge(status: book.status),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            Row(
+              children: [
+                const Text('Статус: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                StatusBadge(status: book.status),
+              ],
             ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: book.status == 'Доступна' ? () {} : null,
+                onPressed: book.status == 'Доступна'
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Запрос отправлен владельцу!')),
+                        );
+                      }
+                    : null,
                 icon: const Icon(Icons.handshake),
                 label: const Text('Запросить книгу на время'),
               ),
