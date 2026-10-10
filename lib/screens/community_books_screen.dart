@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/mock_data.dart';
 import '../widgets/book_card.dart';
@@ -43,7 +44,13 @@ class CommunityBooksScreen extends StatelessWidget {
             child: ListView.separated(
               itemCount: MockData.books.length,
               separatorBuilder: (_, _) => const SizedBox(height: 4),
-              itemBuilder: (context, index) => BookCard(book: MockData.books[index]),
+              itemBuilder: (context, index) {
+                final book = MockData.books[index];
+                return BookCard(
+                  book: book,
+                  onTap: () => context.push('/community/${book.id}'),
+                );
+              },
             ),
           ),
         ],

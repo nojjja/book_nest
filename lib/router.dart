@@ -53,6 +53,14 @@ final router = GoRouter(
             GoRoute(
               path: '/community',
               builder: (context, state) => const CommunityBooksScreen(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) => BookDetailsScreen(
+                    id: state.pathParameters['id']!,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
