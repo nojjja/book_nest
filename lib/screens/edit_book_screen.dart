@@ -111,6 +111,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                 DropdownMenuItem(value: 'Доступна', child: Text('Доступна')),
                 DropdownMenuItem(value: 'Выдана', child: Text('Выдана')),
               ],
+              onChanged: (_) {},
               validator: (value) => value == null ? 'Выберите статус книги' : null,
             ),
             const SizedBox(height: 24),

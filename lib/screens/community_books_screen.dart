@@ -42,7 +42,7 @@ class CommunityBooksScreen extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: MockData.books.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
               itemBuilder: (context, index) => BookCard(book: MockData.books[index]),
             ),
           ),

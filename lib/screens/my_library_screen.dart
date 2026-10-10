@@ -25,7 +25,7 @@ class MyLibraryScreen extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: MockData.books.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
                 final book = MockData.books[index];
                 return BookCard(
