@@ -9,15 +9,15 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: navigationShell, // Отображает содержимое текущей активной вкладки
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) => navigationShell.goBranch(index),
+        onDestinationSelected: (index) => navigationShell.goBranch(index), // Автоматически переключает ветку
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.book_outlined),
             selectedIcon: Icon(Icons.book),
-            label: 'Мои книги',
+            label: 'Библиотека',
           ),
           NavigationDestination(
             icon: Icon(Icons.people_outline),

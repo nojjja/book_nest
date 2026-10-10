@@ -9,31 +9,32 @@ import 'screens/edit_book_screen.dart';
 import 'widgets/app_shell.dart';
 
 final router = GoRouter(
-  initialLocation: '/login', // Стартуем с экрана аутентификации
+  initialLocation: '/login', // Старт с экрана входа
   routes: [
-    // ВНЕ shell-а (без нижней навигационной панели)
+    // 1. Маршрут ВНЕ shell-а (у экрана входа нет нижней панели)
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
-    
-    // ВНУТРИ shell-а (постоянная панель NavigationBar)
+
+    // 2. Постоянная оболочка вкладок через indexedStack
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           AppShell(navigationShell: navigationShell),
       branches: [
-        // Вкладка 1: Моя библиотека
+        // Ветка 1: Моя библиотека (с под-маршрутами формы и деталей)
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/library',
               builder: (context, state) => const MyLibraryScreen(),
               routes: [
-                // ФИКСИРОВАННЫЙ маршрут перед переменным :id!
+                // Относительный путь: /library/add (ФИКСИРОВАННЫЙ — перед :id!)
                 GoRoute(
                   path: 'add',
                   builder: (context, state) => const EditBookScreen(),
                 ),
+                // Относительный путь: /library/:id
                 GoRoute(
                   path: ':id',
                   builder: (context, state) {
@@ -46,7 +47,7 @@ final router = GoRouter(
           ],
         ),
 
-        // Вкладка 2: Сообщество
+        // Ветка 2: Книги сообщества
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -56,7 +57,7 @@ final router = GoRouter(
           ],
         ),
 
-        // Вкладка 3: Обмены
+        // Ветка 3: Мои обмены
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -66,7 +67,7 @@ final router = GoRouter(
           ],
         ),
 
-        // Вкладка 4: Профиль
+        // Ветка 4: Профиль пользователя
         StatefulShellBranch(
           routes: [
             GoRoute(
