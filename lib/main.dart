@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
+import 'router.dart';
 
 void main() => runApp(const BookNestApp());
 
@@ -8,7 +8,7 @@ class BookNestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'BookNest',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -20,7 +20,7 @@ class BookNestApp extends StatelessWidget {
           titleLarge: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      home: const LoginScreen(),
+      routerConfig: router,
     );
   }
 }
