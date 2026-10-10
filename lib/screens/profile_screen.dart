@@ -1,119 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  // Логика блокирующего решения (C6 requirement)
+  Future<void> _logout(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Выйти из аккаунта?'),
+        content: const Text('Вам придётся снова ввести логин и пароль.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Да, выйти'),
+          ),
+        ],
+      ),
+    );
+
+    // Проверка результата ok == true и context.mounted после await
+    if (ok == true && context.mounted) {
+      context.go('/login'); // go: сбрасывает стек вкладок ShellRoute
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Профиль'),
       ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 20),
-
-          Center(
-            child: CircleAvatar(
-              radius: 42,
-              backgroundColor: scheme.primaryContainer,
-              child: Text(
-                'Н',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: scheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: colorScheme.primaryContainer,
+              child: Icon(
+                Icons.person,
+                size: 50,
+                color: colorScheme.onPrimaryContainer,
               ),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Center(
-            child: Text(
+            const SizedBox(height: 12),
+            const Text(
               'Надежда',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-          ),
-
-          const SizedBox(height: 6),
-
-          Center(
-            child: Text(
-              'nadezhda@example.com',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
+            const Text('Студент • Технический Университет Молдовы'),
+            const SizedBox(height: 24),
+            const Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.book),
+                    title: Text('Моих книг в каталоге'),
+                    trailing: Text('4', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
+                  Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.swap_horiz),
+                    title: Text('Активных обменов'),
+                    trailing: Text('2', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const Spacer(),
 
-          const SizedBox(height: 30),
-
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.menu_book,
-                    color: scheme.primary,
-                  ),
-                  title: const Text('Книги в библиотеке'),
-                  trailing: const Text('8'),
+            // Кнопка выхода из аккаунта с деструктивным действием
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => _logout(context),
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: const Text(
+                  'Выйти из аккаунта',
+                  style: TextStyle(color: Colors.red),
                 ),
-
-                const Divider(height: 1),
-
-                ListTile(
-                  leading: Icon(
-                    Icons.swap_horiz,
-                    color: scheme.primary,
-                  ),
-                  title: const Text('Завершённые обмены'),
-                  trailing: const Text('12'),
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-                  leading: Icon(
-                    Icons.star_outline,
-                    color: scheme.primary,
-                  ),
-                  title: const Text('Рейтинг'),
-                  trailing: const Text('4.8'),
-                ),
-              ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.settings_outlined),
-                  title: const Text('Настройки'),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-                  leading: const Icon(Icons.help_outline),
-                  title: const Text('Помощь'),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
