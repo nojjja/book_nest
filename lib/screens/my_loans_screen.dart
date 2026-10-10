@@ -55,7 +55,11 @@ class MyLoansScreen extends StatelessWidget {
                     subtitle: Text('Взято у сокурсника\nВернуть до: ${loan.dueDate}'),
                     isThreeLine: true,
                     trailing: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Запрос на возврат отправлен.')),
+                        );
+                      },
                       child: const Text('Вернуть'),
                     ),
                   ),

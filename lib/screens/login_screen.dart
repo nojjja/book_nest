@@ -112,7 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Войти'),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Регистрация в этом макете пока не реализована.'),
+                      ),
+                    );
+                  },
                   child: const Text('Нет аккаунта? Зарегистрируйтесь'),
                 ),
               ],
