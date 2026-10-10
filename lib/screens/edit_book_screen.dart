@@ -101,6 +101,20 @@ class _EditBookScreenState extends State<EditBookScreen> {
             ),
             const SizedBox(height: 24),
 
+            DropdownButtonFormField<String>(
+              initialValue: 'Доступна',
+              decoration: const InputDecoration(
+                labelText: 'Статус книги',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'Доступна', child: Text('Доступна')),
+                DropdownMenuItem(value: 'Выдана', child: Text('Выдана')),
+              ],
+              validator: (value) => value == null ? 'Выберите статус книги' : null,
+            ),
+            const SizedBox(height: 24),
+
             // Кнопка сохранения
             SizedBox(
               height: 48,
