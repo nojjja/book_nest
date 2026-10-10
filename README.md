@@ -1,17 +1,25 @@
-# book_nest
+# BookNest
 
-A new Flutter project.
+Статический Flutter-макет приложения для личной библиотеки и обмена книгами.
+Данные книг и обменов находятся в `lib/data/mock_data.dart`; сеть и база данных
+не используются. Обложки на этом этапе показаны тематической иконкой-заглушкой.
 
-## Getting Started
+## Экраны
 
-This project is a starting point for a Flutter application.
+- Вход — почта/имя пользователя, пароль и переход к демонстрации приложения.
+- Моя библиотека — статический поиск, фильтры по жанру, список книг и добавление.
+- Каталог сообщества — статические поиск, фильтры и книги других участников.
+- Обмены — списки выданных и взятых книг.
+- Профиль — данные и сводка участника.
+- Детали книги — автор, жанр, владелец и доступность.
+- Добавление книги — макет полей без проверки и сохранения.
 
-A few resources to get you started if this is your first Flutter project:
+Главные разделы доступны через нижнюю Material 3 навигацию. Подробности книги
+открываются нажатием на карточку. Палитра строится из seed-цвета в `main.dart`.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Запуск
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter pub get
+flutter run
+```
