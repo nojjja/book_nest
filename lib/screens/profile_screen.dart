@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../data/mock_book_repository.dart';
+import '../data/mock_loan_repository.dart';
+import '../models/books_model.dart';
 import '../models/loans_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  // Логика блокирующего решения (C6 requirement)
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // Эфемерное состояние переключателя аварии (C7: setState)
+  bool _simulateError = false;
+
+  // Логика блокирующего решения выхода из аккаунта (C6)
   Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -26,9 +37,8 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
 
-    // Проверка результата ok == true и context.mounted после await
     if (ok == true && context.mounted) {
-      context.go('/login'); // go: сбрасывает стек вкладок ShellRoute
+      context.go('/login');
     }
   }
 
@@ -60,13 +70,19 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Text('Студент • Технический Университет Молдовы'),
             const SizedBox(height: 24),
+
             Card(
               child: Column(
                 children: [
-                  const ListTile(
-                    leading: Icon(Icons.book),
-                    title: Text('Моих книг в каталоге'),
-                    trailing: Text('4', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ListTile(
+                    leading: const Icon(Icons.book),
+                    title: const Text('Моих книг в каталоге'),
+                    trailing: Consumer<BooksModel>(
+                      builder: (context, books, _) => Text(
+                        '${books.myBooks.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -82,9 +98,29 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // 9.2: Переключатель аварии — леса демонстрации
+            Card(
+              child: SwitchListTile(
+                secondary: Icon(
+                  Icons.wifi_off,
+                  color: _simulateError ? colorScheme.error : colorScheme.onSurfaceVariant,
+                ),
+                title: const Text('Симулировать сбой сети'),
+                subtitle: const Text('Спровоцировать ошибку сервера (Err)'),
+                value: _simulateError,
+                onChanged: (value) {
+                  setState(() => _simulateError = value);
+                  context.read<MockBookRepository>().simulateError = value;
+                  context.read<MockLoanRepository>().simulateError = value;
+                },
+              ),
+            ),
+
             const Spacer(),
 
-            // Кнопка выхода из аккаунта с деструктивным действием
+            // Кнопка выхода из аккаунта
             SizedBox(
               width: double.infinity,
               height: 48,
