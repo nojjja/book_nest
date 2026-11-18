@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../data/book.dart';
+import '../models/books_model.dart';
 
 class EditBookScreen extends StatefulWidget {
   const EditBookScreen({super.key});
@@ -16,6 +19,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   final _titleCtrl = TextEditingController();
   final _authorCtrl = TextEditingController();
   final _genreCtrl = TextEditingController();
+  String _selectedStatus = 'Доступна';
 
   // 3. Кто создаёт контроллеры, тот их и освобождает
   @override
@@ -26,20 +30,32 @@ class _EditBookScreenState extends State<EditBookScreen> {
     super.dispose();
   }
 
-  // 4. Метод сохранения и валидации
-  void _save() {
+  // 4. Метод сохранения и валидации (Задание 6)
+  Future<void> _save() async {
     // Если валидация не прошла — ошибки отрисуются под полями
     if (!_formKey.currentState!.validate()) return;
 
-    // Валидация успешна — показываем фидбек и закрываем экран
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Книга сохранена: ${_titleCtrl.text.trim()}'),
-      ),
+    final draft = Book(
+      id: '', // временный id — настоящую идентичность даст хранилище
+      ownerId: 'user1',
+      title: _titleCtrl.text.trim(),
+      author: _authorCtrl.text.trim(),
+      genre: _genreCtrl.text.trim().isEmpty ? 'Разное' : _genreCtrl.text.trim(),
+      coverUrl: '',
+      status: _selectedStatus,
     );
 
-    // Экран был открыт через context.push('/library/add') -> закрываем через pop()
-    context.pop();
+    final error = await context.read<BooksModel>().add(draft);
+    if (!mounted) return; // C8: экран может умереть, пока запрос летит
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)), // данные остаются в полях
+      );
+      return;
+    }
+
+    context.pop(); // список позади УЖЕ вырос — без единого лишнего вызова
   }
 
   @override
@@ -102,7 +118,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
             const SizedBox(height: 24),
 
             DropdownButtonFormField<String>(
-              initialValue: 'Доступна',
+              initialValue: _selectedStatus,
               decoration: const InputDecoration(
                 labelText: 'Статус книги',
                 border: OutlineInputBorder(),
@@ -111,7 +127,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
                 DropdownMenuItem(value: 'Доступна', child: Text('Доступна')),
                 DropdownMenuItem(value: 'Выдана', child: Text('Выдана')),
               ],
-              onChanged: (_) {},
+              onChanged: (val) {
+                if (val != null) setState(() => _selectedStatus = val);
+              },
               validator: (value) => value == null ? 'Выберите статус книги' : null,
             ),
             const SizedBox(height: 24),
