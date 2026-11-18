@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../models/loans_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -58,19 +60,24 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Text('Студент • Технический Университет Молдовы'),
             const SizedBox(height: 24),
-            const Card(
+            Card(
               child: Column(
                 children: [
-                  ListTile(
+                  const ListTile(
                     leading: Icon(Icons.book),
                     title: Text('Моих книг в каталоге'),
                     trailing: Text('4', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                  Divider(height: 1),
+                  const Divider(height: 1),
                   ListTile(
-                    leading: Icon(Icons.swap_horiz),
-                    title: Text('Активных обменов'),
-                    trailing: Text('2', style: TextStyle(fontWeight: FontWeight.bold)),
+                    leading: const Icon(Icons.swap_horiz),
+                    title: const Text('Активных обменов'),
+                    trailing: Consumer<LoansModel>(
+                      builder: (context, loans, _) => Text(
+                        '${loans.count}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ],
               ),

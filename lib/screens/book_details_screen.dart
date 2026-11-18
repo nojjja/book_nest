@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../data/book.dart';
+import '../data/loan.dart';
 import '../data/mock_data.dart';
+import '../models/loans_model.dart';
 import '../widgets/status_badge.dart';
 
 class BookDetailsScreen extends StatelessWidget {
@@ -12,7 +16,7 @@ class BookDetailsScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Шаг 2 ТЗ: Экран сам ищет свой объект по id
-    final book = MockData.books.firstWhere(
+    final Book book = MockData.books.firstWhere(
       (b) => b.id == id,
       orElse: () => MockData.books.first,
     );
@@ -60,8 +64,17 @@ class BookDetailsScreen extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: book.status == 'Доступна'
                     ? () {
+                        final loan = Loan(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          bookTitle: book.title,
+                          borrowerName: 'Надежда',
+                          dueDate: '01.12.2026',
+                          status: 'Взята',
+                        );
+                        // 2) ДЕЙСТВУЕШЬ — read, в callback-е
+                        context.read<LoansModel>().add(loan);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Запрос отправлен владельцу!')),
+                          const SnackBar(content: Text('Книга запрошена и добавлена в обмены!')),
                         );
                       }
                     : null,

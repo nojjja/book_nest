@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'models/loans_model.dart';
 import 'router.dart';
 
-void main() => runApp(const BookNestApp());
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LoansModel(),
+      child: const BookNestApp(),
+    ),
+  );
+}
 
 class BookNestApp extends StatelessWidget {
   const BookNestApp({super.key});

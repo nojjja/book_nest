@@ -1,39 +1,6 @@
 
-class Book {
-  final String id;
-  final String ownerId;
-  final String title;
-  final String author;
-  final String genre;
-  final String coverUrl;
-  final String status; // "Доступна" или "Выдана"
-
-  const Book({
-    required this.id,
-    required this.ownerId,
-    required this.title,
-    required this.author,
-    required this.genre,
-    required this.coverUrl,
-    required this.status,
-  });
-}
-
-class Loan {
-  final String id;
-  final String bookTitle;
-  final String borrowerName;
-  final String dueDate;
-  final String status; // "Выдана" или "Взята"
-
-  const Loan({
-    required this.id,
-    required this.bookTitle,
-    required this.borrowerName,
-    required this.dueDate,
-    required this.status,
-  });
-}
+import 'book.dart';
+import 'loan.dart';
 
 class MockData {
   // Не менее 8 книг для проверки верстки (длинные названия, разные авторы)
