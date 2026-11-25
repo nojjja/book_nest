@@ -1,4 +1,3 @@
-
 import 'book.dart';
 import 'loan.dart';
 
@@ -12,7 +11,7 @@ class MockData {
       author: 'Роберт Мартин',
       genre: 'Программирование',
       coverUrl: '',
-      status: 'Доступна',
+      status: BookStatus.available,
     ),
     Book(
       id: '2',
@@ -21,7 +20,7 @@ class MockData {
       author: 'Джордж Оруэлл',
       genre: 'Антиутопия',
       coverUrl: '',
-      status: 'Выдана',
+      status: BookStatus.loaned,
     ),
     Book(
       id: '3',
@@ -30,7 +29,7 @@ class MockData {
       author: 'Томас Кормен, Чарльз Лейзерсон',
       genre: 'Образование',
       coverUrl: '',
-      status: 'Доступна',
+      status: BookStatus.available,
     ),
     Book(
       id: '4',
@@ -39,7 +38,7 @@ class MockData {
       author: 'Стив Макконнелл',
       genre: 'Программирование',
       coverUrl: '',
-      status: 'Доступна',
+      status: BookStatus.loaned,
     ),
     Book(
       id: '5',
@@ -48,7 +47,7 @@ class MockData {
       author: 'Фрэнк Герберт',
       genre: 'Фантастика',
       coverUrl: '',
-      status: 'Выдана',
+      status: BookStatus.loaned,
     ),
     Book(
       id: '6',
@@ -57,7 +56,7 @@ class MockData {
       author: 'Джек Лондон',
       genre: 'Классика',
       coverUrl: '',
-      status: 'Доступна',
+      status: BookStatus.loaned,
     ),
     Book(
       id: '7',
@@ -66,7 +65,7 @@ class MockData {
       author: 'Эндрю Таненбаум',
       genre: 'Образование',
       coverUrl: '',
-      status: 'Доступна',
+      status: BookStatus.available,
     ),
     Book(
       id: '8',
@@ -75,22 +74,82 @@ class MockData {
       author: 'Дональд Кнут',
       genre: 'Образование',
       coverUrl: '',
-      status: 'Выдана',
+      status: BookStatus.loaned,
     ),
   ];
 
   static const List<Loan> loans = [
-    Loan(id: 'l1', bookTitle: '1984 (Специальное издание)', borrowerName: 'Екатерина Трач', dueDate: '15.10.2026', status: 'Выдана'),
-    Loan(id: 'l2', bookTitle: 'Дюна', borrowerName: 'Александр Сырбу', dueDate: '20.10.2026', status: 'Взята'),
-    Loan(id: 'l3', bookTitle: 'Совершенный код', borrowerName: 'Иван Морарь', dueDate: '01.11.2026', status: 'Взята'),
-    Loan(id: 'l4', bookTitle: 'Искусство программирования', borrowerName: 'Анна Киртока', dueDate: '05.11.2026', status: 'Выдана'),
-    Loan(id: 'l5', bookTitle: 'Чистый код: создание, анализ и рефакторинг', borrowerName: 'Дмитрий Чебан', dueDate: '12.11.2026', status: 'Выдана'),
-    Loan(id: 'l6', bookTitle: 'Мартин Иден', borrowerName: 'Елена Русу', dueDate: '18.11.2026', status: 'Взята'),
-    Loan(id: 'l7', bookTitle: 'Алгоритмы: построение и анализ', borrowerName: 'Мария Ботнарь', dueDate: '22.11.2026', status: 'Выдана'),
-    Loan(id: 'l8', bookTitle: 'Цветы для Элджернона', borrowerName: 'Виктор Лупу', dueDate: '25.11.2026', status: 'Взята'),
-    Loan(id: 'l9', bookTitle: 'Мастер и Маргарита', borrowerName: 'Ольга Руснак', dueDate: '30.11.2026', status: 'Выдана'),
-    Loan(id: 'l10', bookTitle: 'Три товарища', borrowerName: 'Сергей Кожокару', dueDate: '03.12.2026', status: 'Взята'),
-    Loan(id: 'l11', bookTitle: 'Властелин колец: Братство кольца', borrowerName: 'Ирина Драган', dueDate: '08.12.2026', status: 'Выдана'),
-    Loan(id: 'l12', bookTitle: 'Маленький принц', borrowerName: 'Павел Чеботарь', dueDate: '10.12.2026', status: 'Взята'),
+    Loan(
+      id: 'l1',
+      bookId: '5',
+      borrowerId: 'user1',
+      borrowerName: 'Надежда',
+      startDate: '10.11.2026',
+      dueDate: '20.11.2026',
+      status: LoanStatus.active,
+    ),
+    Loan(
+      id: 'l2',
+      bookId: '6',
+      borrowerId: 'user1',
+      borrowerName: 'Надежда',
+      startDate: '30.10.2026',
+      dueDate: '18.11.2026',
+      status: LoanStatus.active,
+    ),
+    Loan(
+      id: 'l3',
+      bookId: '4',
+      borrowerId: 'user1',
+      borrowerName: 'Надежда',
+      startDate: '01.11.2026',
+      dueDate: '22.11.2026',
+      status: LoanStatus.active,
+    ),
+    Loan(
+      id: 'l4',
+      bookId: '2',
+      borrowerId: 'user2',
+      borrowerName: 'Екатерина Трач',
+      startDate: '01.10.2026',
+      dueDate: '25.11.2026',
+      status: LoanStatus.active,
+    ),
+    Loan(
+      id: 'l5',
+      bookId: '8',
+      borrowerId: 'user3',
+      borrowerName: 'Анна Киртока',
+      startDate: '25.10.2026',
+      dueDate: '05.12.2026',
+      status: LoanStatus.active,
+    ),
+    Loan(
+      id: 'l6',
+      bookId: '1',
+      borrowerId: 'user2',
+      borrowerName: 'Дмитрий Чебан',
+      startDate: '28.10.2026',
+      dueDate: '12.12.2026',
+      status: LoanStatus.completed,
+    ),
+    Loan(
+      id: 'l7',
+      bookId: '3',
+      borrowerId: 'user1',
+      borrowerName: 'Надежда',
+      startDate: '05.10.2026',
+      dueDate: '01.11.2026',
+      status: LoanStatus.completed,
+    ),
+    Loan(
+      id: 'l8',
+      bookId: '7',
+      borrowerId: 'user2',
+      borrowerName: 'Иван Морарь',
+      startDate: '12.09.2026',
+      dueDate: '15.10.2026',
+      status: LoanStatus.completed,
+    ),
   ];
 }

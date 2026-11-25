@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../data/loan.dart';
 import '../data/loan_repository.dart';
 import '../data/result.dart';
@@ -37,6 +38,20 @@ class LoansModel extends ChangeNotifier {
     switch (await _repository.create(loan)) {
       case Ok(:final value):
         _loans = [..._loans, value];
+        notifyListeners();
+        return null;
+      case Err(:final msg):
+        return msg;
+    }
+  }
+
+  Future<String?> update(Loan loan) async {
+    switch (await _repository.update(loan)) {
+      case Ok(:final value):
+        _loans = [
+          for (final item in _loans)
+            if (item.id == value.id) value else item,
+        ];
         notifyListeners();
         return null;
       case Err(:final msg):

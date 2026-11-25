@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../data/book.dart';
-import 'status_badge.dart';
+import 'book_shelf_row.dart';
 
+/// Совместимая обёртка над архивной строкой книжной полки
 class BookCard extends StatelessWidget {
   final Book book;
-  final VoidCallback? onTap; // Наследие L2: гибкий callback для нажатия
+  final VoidCallback? onTap;
 
   const BookCard({
     super.key,
@@ -14,31 +15,9 @@ class BookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHighest,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primary,
-          child: Text(
-            book.title.isNotEmpty ? book.title[0] : '?',
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          book.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('${book.author} • ${book.genre}'),
-        trailing: StatusBadge(status: book.status),
-      ),
+    return BookShelfRow(
+      book: book,
+      onTap: onTap ?? () {},
     );
   }
 }

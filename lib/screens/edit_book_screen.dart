@@ -1,146 +1,186 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../data/book.dart';
 import '../models/books_model.dart';
+import '../theme/app_theme.dart';
 
 class EditBookScreen extends StatefulWidget {
-  const EditBookScreen({super.key});
+  const EditBookScreen({super.key, this.bookId});
+
+  final String? bookId;
 
   @override
   State<EditBookScreen> createState() => _EditBookScreenState();
 }
 
 class _EditBookScreenState extends State<EditBookScreen> {
-  // 1. Ключ формы для запуска валидации
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _authorController = TextEditingController();
+  final _genreController = TextEditingController();
+  BookStatus _status = BookStatus.available;
+  bool _loadedExistingBook = false;
+  bool _saving = false;
 
-  // 2. Контроллеры полей формы
-  final _titleCtrl = TextEditingController();
-  final _authorCtrl = TextEditingController();
-  final _genreCtrl = TextEditingController();
-  String _selectedStatus = 'Доступна';
+  bool get _isEditing => widget.bookId != null;
 
-  // 3. Кто создаёт контроллеры, тот их и освобождает
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loadedExistingBook || widget.bookId == null) return;
+    final book = context.read<BooksModel>().byId(widget.bookId!);
+    if (book == null) return;
+    _titleController.text = book.title;
+    _authorController.text = book.author;
+    _genreController.text = book.genre;
+    _status = book.status;
+    _loadedExistingBook = true;
+  }
+
   @override
   void dispose() {
-    _titleCtrl.dispose();
-    _authorCtrl.dispose();
-    _genreCtrl.dispose();
+    _titleController.dispose();
+    _authorController.dispose();
+    _genreController.dispose();
     super.dispose();
   }
 
-  // 4. Метод сохранения и валидации (Задание 6)
-  Future<void> _save() async {
-    // Если валидация не прошла — ошибки отрисуются под полями
-    if (!_formKey.currentState!.validate()) return;
+  String? _validateTitle(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Укажите название книги';
+    if (value.trim().length < 2) return 'Нужно минимум два символа';
+    return null;
+  }
 
-    final draft = Book(
-      id: '', // временный id — настоящую идентичность даст хранилище
-      ownerId: 'user1',
-      title: _titleCtrl.text.trim(),
-      author: _authorCtrl.text.trim(),
-      genre: _genreCtrl.text.trim().isEmpty ? 'Разное' : _genreCtrl.text.trim(),
-      coverUrl: '',
-      status: _selectedStatus,
+  String? _validateAuthor(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Укажите автора';
+    return null;
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate() || _saving) return;
+    setState(() => _saving = true);
+
+    final model = context.read<BooksModel>();
+    final current = widget.bookId == null ? null : model.byId(widget.bookId!);
+    final record = Book(
+      id: current?.id ?? '',
+      ownerId: current?.ownerId ?? 'user1',
+      title: _titleController.text.trim(),
+      author: _authorController.text.trim(),
+      genre: _genreController.text.trim().isEmpty
+          ? 'Разное'
+          : _genreController.text.trim(),
+      coverUrl: current?.coverUrl ?? '',
+      status: _status,
     );
 
-    final error = await context.read<BooksModel>().add(draft);
-    if (!mounted) return; // C8: экран может умереть, пока запрос летит
+    final error = current == null
+        ? await model.add(record)
+        : await model.update(record);
+    if (!mounted) return;
+    setState(() => _saving = false);
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)), // данные остаются в полях
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
-
-    context.pop(); // список позади УЖЕ вырос — без единого лишнего вызова
+    context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Добавить книгу'),
+        title: Text(_isEditing ? 'Редактировать запись' : 'Новая запись'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 32),
           children: [
-            // Поле 1: Название книги (Обязательное)
+            Text(
+              _isEditing ? 'ИЗМЕНИТЬ КАТАЛОГОВЫЕ ДАННЫЕ' : 'ПОПОЛНИТЬ АРХИВ',
+              style: AppTheme.mono(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.charcoalMuted,
+              ),
+            ),
+            const SizedBox(height: 16),
             TextFormField(
-              controller: _titleCtrl,
+              controller: _titleController,
               textInputAction: TextInputAction.next,
+              style: AppTheme.serifHeading(fontSize: 18),
               decoration: const InputDecoration(
                 labelText: 'Название книги *',
-                border: OutlineInputBorder(),
+                hintText: 'Например, «Мастер и Маргарита»',
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Название книги обязательно';
-                }
-                if (value.trim().length < 2) {
-                  return 'Название должно содержать минимум 2 символа';
-                }
-                return null; // null = валидно
-              },
+              validator: _validateTitle,
             ),
-            const SizedBox(height: 16),
-
-            // Поле 2: Автор (Обязательное)
+            const SizedBox(height: 15),
             TextFormField(
-              controller: _authorCtrl,
+              controller: _authorController,
               textInputAction: TextInputAction.next,
+              style: AppTheme.sans(fontSize: 15),
               decoration: const InputDecoration(
                 labelText: 'Автор *',
-                border: OutlineInputBorder(),
+                hintText: 'Имя автора',
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Укажите автора книги';
-                }
-                return null;
-              },
+              validator: _validateAuthor,
             ),
-            const SizedBox(height: 16),
-
-            // Поле 3: Жанр (Необязательное)
+            const SizedBox(height: 15),
             TextFormField(
-              controller: _genreCtrl,
+              controller: _genreController,
               textInputAction: TextInputAction.done,
+              style: AppTheme.sans(fontSize: 14),
               decoration: const InputDecoration(
                 labelText: 'Жанр',
-                border: OutlineInputBorder(),
+                hintText: 'Например, классика',
               ),
             ),
-            const SizedBox(height: 24),
-
-            DropdownButtonFormField<String>(
-              initialValue: _selectedStatus,
-              decoration: const InputDecoration(
-                labelText: 'Статус книги',
-                border: OutlineInputBorder(),
-              ),
+            const SizedBox(height: 19),
+            DropdownButtonFormField<BookStatus>(
+              initialValue: _status,
+              decoration: const InputDecoration(labelText: 'Статус экземпляра'),
               items: const [
-                DropdownMenuItem(value: 'Доступна', child: Text('Доступна')),
-                DropdownMenuItem(value: 'Выдана', child: Text('Выдана')),
+                DropdownMenuItem<BookStatus>(
+                  value: BookStatus.available,
+                  child: Text('Доступна'),
+                ),
+                DropdownMenuItem<BookStatus>(
+                  value: BookStatus.loaned,
+                  child: Text('Выдана'),
+                ),
               ],
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedStatus = val);
+              onChanged: (value) {
+                if (value != null) setState(() => _status = value);
               },
-              validator: (value) => value == null ? 'Выберите статус книги' : null,
+              validator: (value) =>
+                  value == null ? 'Выберите статус экземпляра' : null,
             ),
-            const SizedBox(height: 24),
-
-            // Кнопка сохранения
+            const SizedBox(height: 28),
             SizedBox(
               height: 48,
-              child: FilledButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save),
-                label: const Text('Сохранить'),
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.forestEmerald,
+                  foregroundColor: AppTheme.paper,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                ),
+                child: Text(
+                  _saving ? 'СОХРАНЯЕМ…' : 'СОХРАНИТЬ В АРХИВ',
+                  style: AppTheme.mono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.paper,
+                  ),
+                ),
               ),
             ),
           ],

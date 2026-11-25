@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
 
+import '../data/book.dart';
+import '../theme/app_theme.dart';
+
 class StatusBadge extends StatelessWidget {
-  final String status;
+  final BookStatus status;
 
   const StatusBadge({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isAvailable = status == 'Доступна';
+    final isAvailable = status == BookStatus.available;
+    final color = isAvailable ? AppTheme.forestEmerald : AppTheme.waxTerracotta;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isAvailable ? colorScheme.primaryContainer : colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1.0),
+        borderRadius: BorderRadius.circular(2),
+        color: color.withValues(alpha: 0.08),
       ),
       child: Text(
-        status,
-        style: TextStyle(
-          color: isAvailable ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+        status.bookStatusLabel.toUpperCase(),
+        style: AppTheme.mono(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.8,
         ),
       ),
     );

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../models/books_model.dart';
-import '../widgets/book_card.dart';
+import '../theme/app_theme.dart';
+import '../widgets/book_shelf_row.dart';
 import '../widgets/error_view.dart';
+import '../widgets/genre_filter_tabs.dart';
 
 class MyLibraryScreen extends StatefulWidget {
   const MyLibraryScreen({super.key});
@@ -13,106 +16,123 @@ class MyLibraryScreen extends StatefulWidget {
 }
 
 class _MyLibraryScreenState extends State<MyLibraryScreen> {
+  String _selectedGenre = 'Все';
   String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    // watch в build (C7)
     final model = context.watch<BooksModel>();
+    final books = model.myBooks;
+    final genres = <String>['Все', ...books.map((book) => book.genre).toSet()];
+    final counts = <String, int>{
+      for (final genre in genres)
+        genre: genre == 'Все'
+            ? books.length
+            : books.where((book) => book.genre == genre).length,
+    };
+    final visibleBooks = books.where((book) {
+      final matchesGenre =
+          _selectedGenre == 'Все' || book.genre == _selectedGenre;
+      final query = _searchQuery.trim().toLowerCase();
+      final matchesQuery =
+          book.title.toLowerCase().contains(query) ||
+          book.author.toLowerCase().contains(query);
+      return matchesGenre && matchesQuery;
+    }).toList();
 
-    final Widget body;
-    if (model.isLoading) {
-      body = const Center(child: CircularProgressIndicator()); // 1) грузится
-    } else if (model.error != null) {
-      body = ErrorView(
-        message: model.error!, // 2) упало
-        onRetry: () => context.read<BooksModel>().load(), // read: действие
-      );
-    } else {
-      final filteredBooks = model.myBooks.where((b) {
-        final query = _searchQuery.toLowerCase();
-        return b.title.toLowerCase().contains(query) ||
-            b.author.toLowerCase().contains(query);
-      }).toList();
-
-      body = Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              onChanged: (val) => setState(() => _searchQuery = val),
-              decoration: InputDecoration(
-                hintText: 'Поиск книги или автора...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('BookNest'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push('/library/add'),
+            icon: const Icon(Icons.add, size: 17),
+            label: Text(
+              'В АРХИВ',
+              style: AppTheme.mono(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.forestEmerald,
               ),
             ),
           ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ЛИЧНЫЙ ФОНД  /  01',
+                  style: AppTheme.mono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.charcoalMuted,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text('Моя полка', style: AppTheme.serifHeading(fontSize: 30)),
+                const SizedBox(height: 8),
+                TextField(
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  style: AppTheme.sans(fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Поиск по названию или автору',
+                    prefixIcon: Icon(Icons.search, size: 19),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GenreFilterTabs(
+            genres: genres,
+            selectedGenre: _selectedGenre,
+            counts: counts,
+            onGenreSelected: (genre) => setState(() => _selectedGenre = genre),
+          ),
+          const SizedBox(height: 4),
           Expanded(
-            child: filteredBooks.isEmpty
+            child: model.isLoading
                 ? const Center(
-                    child: Text(
-                      'Книги не найдены',
-                      style: TextStyle(color: Colors.grey),
+                    child: CircularProgressIndicator(
+                      color: AppTheme.forestEmerald,
+                      strokeWidth: 1.5,
                     ),
                   )
-                : ListView.separated(
-                    itemCount: filteredBooks.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 4),
+                : model.error != null
+                ? ErrorView(
+                    message: model.error!,
+                    onRetry: () => context.read<BooksModel>().load(),
+                  )
+                : visibleBooks.isEmpty
+                ? Center(
+                    child: Text(
+                      'В этом разделе пока пусто',
+                      style: AppTheme.serifHeading(
+                        fontSize: 18,
+                        color: AppTheme.charcoalMuted,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: visibleBooks.length,
                     itemBuilder: (context, index) {
-                      final book = filteredBooks[index];
-                      return Dismissible(
-                        key: ValueKey(book.id), // Идентичность из данных (C7)
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          color: Theme.of(context).colorScheme.error,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Удалить книгу?'),
-                              content: Text('Удалить «${book.title}» из библиотеки?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Отмена'),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Удалить'),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        onDismissed: (_) {
-                          context.read<BooksModel>().remove(book.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Книга «${book.title}» удалена')),
-                          );
-                        },
-                        child: BookCard(
-                          book: book,
-                          onTap: () => context.push('/library/${book.id}'),
-                        ),
+                      final book = visibleBooks[index];
+                      return BookShelfRow(
+                        key: ValueKey(book.id),
+                        book: book,
+                        onTap: () => context.push('/library/${book.id}'),
                       );
                     },
                   ),
           ),
         ],
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('BookNest — Моя библиотека')),
-      body: body,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/library/add'),
-        child: const Icon(Icons.add),
       ),
     );
   }

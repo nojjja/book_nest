@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../theme/app_theme.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -9,28 +11,19 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // 1. Ключ формы для запуска валидации
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  // 2. Контроллеры полей
-  final _emailCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-
-  // 3. Освобождение ресурсов (C6 requirement)
   @override
   void dispose() {
-    _emailCtrl.dispose();
-    _passwordCtrl.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  // 4. Метод обработки входа
   void _submit() {
-    // Если валидация не прошла — ошибки отобразятся под полями
     if (!_formKey.currentState!.validate()) return;
-
-    // ВАЖНО: context.go убирает /login из стека навигации,
-    // чтобы пользователь не мог вернуться назад кнопкой "Назад"
     context.go('/library');
   }
 
@@ -40,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: constraints.maxHeight - 48,
@@ -51,85 +44,112 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.menu_book,
-                      size: 80,
-                      color: Theme.of(context).colorScheme.primary,
+                    const Icon(
+                      Icons.menu_book_rounded,
+                      size: 52,
+                      color: AppTheme.forestEmerald,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    const SizedBox(height: 11),
+                    Text(
                       'BookNest',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                      style: AppTheme.serifHeading(
+                        fontSize: 37,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const Text(
-                      'Личная библиотека и обмен книгами',
+                    Text(
+                      'EX LIBRIS  ·  СТУДЕНЧЕСКИЙ КНИГООБМЕН',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
+                      style: AppTheme.mono(
+                        fontSize: 8,
+                        color: AppTheme.charcoalMuted,
+                        letterSpacing: .65,
+                      ),
                     ),
-                    const SizedBox(height: 32),
-
-                    // Поле Email
+                    const SizedBox(height: 34),
                     TextFormField(
-                      controller: _emailCtrl,
+                      controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
+                      style: AppTheme.sans(fontSize: 15),
                       decoration: const InputDecoration(
-                        labelText: 'Email *',
-                        border: OutlineInputBorder(),
+                        labelText: 'Электронная почта',
+                        hintText: 'name@university.md',
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Введите Email';
+                          return 'Введите адрес электронной почты';
                         }
-                        if (!value.contains('@')) {
-                          return 'Email должен содержать символ @';
+                        if (!value.trim().contains('@')) {
+                          return 'Проверьте формат адреса';
                         }
-                        return null; // null = валидно
+                        return null;
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Поле Пароль
                     TextFormField(
-                      controller: _passwordCtrl,
+                      controller: _passwordController,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submit(),
+                      style: AppTheme.sans(fontSize: 15),
                       decoration: const InputDecoration(
-                        labelText: 'Пароль *',
-                        border: OutlineInputBorder(),
+                        labelText: 'Пароль',
+                        hintText: 'Не менее шести символов',
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Введите пароль';
                         }
                         if (value.length < 6) {
-                          return 'Пароль должен содержать минимум 6 символов';
+                          return 'Нужно минимум шесть символов';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 24),
-
-                    // Кнопка Вход
-                    FilledButton(
-                      onPressed: _submit,
-                      child: const Text('Войти'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Регистрация в этом макете пока не реализована.',
-                            ),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton(
+                        onPressed: _submit,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.forestEmerald,
+                          foregroundColor: AppTheme.paper,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
                           ),
-                        );
-                      },
-                      child: const Text('Нет аккаунта? Зарегистрируйтесь'),
+                        ),
+                        child: Text(
+                          'ВОЙТИ В АРХИВ',
+                          style: AppTheme.mono(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.paper,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Регистрация появится в следующем выпуске.',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'НЕТ БИЛЕТА? ЗАРЕГИСТРИРОВАТЬСЯ',
+                          style: AppTheme.mono(
+                            fontSize: 9,
+                            color: AppTheme.charcoalMuted,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

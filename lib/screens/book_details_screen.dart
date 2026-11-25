@@ -1,156 +1,210 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../data/book.dart';
 import '../data/loan.dart';
+import '../data/loan_actions.dart';
 import '../models/books_model.dart';
 import '../models/loans_model.dart';
-import '../widgets/status_badge.dart';
+import '../theme/app_theme.dart';
+import '../widgets/book_cover.dart';
+import '../widgets/error_view.dart';
+import '../widgets/ex_libris_stamp.dart';
 
 class BookDetailsScreen extends StatelessWidget {
-  final String id; // В адресе путешествует только идентификатор
-
   const BookDetailsScreen({super.key, required this.id});
 
-  Future<void> _deleteBook(BuildContext context, String bookId, String title) async {
-    final ok = await showDialog<bool>(
+  final String id;
+
+  Future<void> _deleteBook(BuildContext context, Book book) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Удалить книгу?'),
-        content: Text('Книга «$title» будет удалена из каталога.'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Убрать книгу из архива?', style: AppTheme.serifHeading()),
+        content: Text(
+          '«${book.title}» будет удалена из вашей полки.',
+          style: AppTheme.sans(),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ОСТАВИТЬ'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Удалить'),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('УДАЛИТЬ'),
           ),
         ],
       ),
     );
+    if (confirmed != true || !context.mounted) return;
 
-    if (ok != true || !context.mounted) return;
-
-    final error = await context.read<BooksModel>().remove(bookId);
-    if (!context.mounted) return; // экран может умереть, пока «запрос» летит
-
+    final error = await context.read<BooksModel>().remove(book.id);
+    if (!context.mounted) return;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
+    context.pop();
+  }
 
-    context.pop(); // объекта больше нет — его экран уходит из стека
+  Future<void> _requestBook(BuildContext context, Book book) async {
+    final error = await requestBookLoan(context, book);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error ?? 'Запрос отправлен. Книга добавлена в ваши обмены.',
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // 6.4: Детали ищут через модель
-    final model = context.watch<BooksModel>();
-    final book = model.byId(id);
+    final books = context.watch<BooksModel>();
+    final loans = context.watch<LoansModel>();
+    final book = books.byId(id);
 
     if (book == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Книга')),
+        appBar: AppBar(title: const Text('Запись архива')),
         body: Center(
-          child: model.isLoading
-              ? const CircularProgressIndicator() // список ещё грузится
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Запись не существует'),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Вернуться назад'),
-                    ),
-                  ],
+          child: books.isLoading
+              ? const CircularProgressIndicator(color: AppTheme.forestEmerald)
+              : books.error != null
+              ? ErrorView(
+                  message: books.error!,
+                  onRetry: () => context.read<BooksModel>().load(),
+                )
+              : Text(
+                  'Книга не найдена',
+                  style: AppTheme.serifHeading(fontSize: 20),
                 ),
         ),
       );
     }
 
+    final isOwner = book.ownerId == 'user1';
+    String? dueDate;
+    for (final loan in loans.items) {
+      if (loan.bookId == book.id && loan.status == LoanStatus.active) {
+        dueDate = loan.dueDate;
+        break;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(book.title),
+        title: Text(
+          'АРХИВНАЯ ЗАПИСЬ  /  ${book.id.padLeft(4, '0')}',
+          style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w700),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Удалить книгу',
-            onPressed: () => _deleteBook(context, book.id, book.title),
-          ),
+          if (isOwner)
+            IconButton(
+              tooltip: 'Редактировать',
+              onPressed: () => context.push('/library/${book.id}/edit'),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          if (isOwner)
+            IconButton(
+              tooltip: 'Удалить из архива',
+              onPressed: () => _deleteBook(context, book),
+              icon: const Icon(Icons.delete_outline),
+            ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(22, 10, 22, 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 140,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.menu_book, size: 80, color: colorScheme.onPrimaryContainer),
+            Center(child: BookCover(book: book, width: 210, height: 292)),
+            const SizedBox(height: 25),
+            Text(
+              '${book.genre.toUpperCase()}  /  ИНВ. № ${book.id}',
+              style: AppTheme.mono(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.charcoalMuted,
+                letterSpacing: 1,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 9),
             Text(
               book.title,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text('Автор: ${book.author}', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('Жанр: ${book.genre}', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Text('Владелец: ${book.ownerId}', style: TextStyle(color: colorScheme.outline)),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Text('Статус: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                StatusBadge(status: book.status),
-              ],
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: book.status == 'Доступна'
-                    ? () async {
-                        final draftLoan = Loan(
-                          id: '',
-                          bookTitle: book.title,
-                          borrowerName: 'Надежда',
-                          dueDate: '10.12.2026',
-                          status: 'Взята',
-                        );
-                        // 2) ДЕЙСТВУЕШЬ — read, в callback-е
-                        final error = await context.read<LoansModel>().add(draftLoan);
-                        if (!context.mounted) return;
-                        if (error != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error)),
-                          );
-                          return;
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Запрос отправлен, книга добавлена в ваши обмены!'),
-                          ),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.handshake),
-                label: const Text('Запросить книгу на время'),
+              style: AppTheme.serifHeading(
+                fontSize: 31,
+                fontWeight: FontWeight.w700,
+                height: 1.05,
               ),
             ),
+            const SizedBox(height: 9),
+            Text(
+              'АВТОР  /  ${book.author}',
+              style: AppTheme.sans(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              'ЭКЗЕМПЛЯР ПРИНАДЛЕЖИТ  /  ${book.ownerId.toUpperCase()}',
+              style: AppTheme.mono(fontSize: 9, color: AppTheme.charcoalMuted),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 19),
+              child: Divider(height: 1, color: AppTheme.hairline),
+            ),
+            Center(
+              child: ExLibrisStamp(
+                status: book.status,
+                dueDate: dueDate,
+                inventoryId: book.id,
+              ),
+            ),
+            const SizedBox(height: 27),
+            Text(
+              'КАТАЛОЖНОЕ ОПИСАНИЕ',
+              style: AppTheme.mono(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.charcoalMuted,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              'Экземпляр из студенческого книгообмена. '
+              'Жанр: ${book.genre}. Авторская запись: ${book.author}.',
+              style: AppTheme.sans(fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 26),
+            if (!isOwner && book.status == BookStatus.available)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _requestBook(context, book),
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  label: const Text('ЗАПРОСИТЬ КНИГУ'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.forestEmerald,
+                    foregroundColor: AppTheme.paper,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                ),
+              )
+            else if (!isOwner)
+              Text(
+                'ЭТОТ ЭКЗЕМПЛЯР УЖЕ ВЫДАН',
+                style: AppTheme.mono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.waxTerracotta,
+                ),
+              ),
           ],
         ),
       ),

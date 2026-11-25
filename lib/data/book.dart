@@ -1,3 +1,16 @@
+enum BookStatus { available, loaned }
+
+extension BookStatusLabel on BookStatus {
+  String get bookStatusLabel {
+    switch (this) {
+      case BookStatus.available:
+        return 'Доступна';
+      case BookStatus.loaned:
+        return 'Выдана';
+    }
+  }
+}
+
 class Book {
   final String id;
   final String ownerId;
@@ -5,7 +18,7 @@ class Book {
   final String author;
   final String genre;
   final String coverUrl;
-  final String status; // "Доступна" или "Выдана"
+  final BookStatus status;
 
   const Book({
     required this.id,
@@ -24,7 +37,7 @@ class Book {
     String? author,
     String? genre,
     String? coverUrl,
-    String? status,
+    BookStatus? status,
   }) {
     return Book(
       id: id ?? this.id,

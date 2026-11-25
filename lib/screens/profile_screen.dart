@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../data/mock_book_repository.dart';
-import '../data/mock_loan_repository.dart';
+
+import '../data/loan.dart';
+import '../data/network_failure_controller.dart';
 import '../models/books_model.dart';
 import '../models/loans_model.dart';
+import '../theme/app_theme.dart';
+import '../widgets/error_view.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,127 +17,238 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Эфемерное состояние переключателя аварии (C7: setState)
   bool _simulateError = false;
 
-  // Логика блокирующего решения выхода из аккаунта (C6)
-  Future<void> _logout(BuildContext context) async {
-    final ok = await showDialog<bool>(
+  void _setSimulateError(BuildContext context, bool value) {
+    setState(() => _simulateError = value);
+    context.read<NetworkFailureController>().setEnabled(value);
+    context.read<BooksModel>().load();
+    context.read<LoansModel>().load();
+  }
+
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Выйти из аккаунта?'),
-        content: const Text('Вам придётся снова ввести логин и пароль.'),
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.paper,
+        title: Text('Выйти из архива?', style: AppTheme.serifHeading()),
+        content: Text(
+          'Для входа понадобится снова открыть учётную запись.',
+          style: AppTheme.sans(),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: const Text('Отмена'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ОСТАТЬСЯ'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            child: const Text('Да, выйти'),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('ВЫЙТИ'),
           ),
         ],
       ),
     );
-
-    if (ok == true && context.mounted) {
-      context.go('/login');
-    }
+    if (confirm == true && mounted) context.go('/login');
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final books = context.watch<BooksModel>();
+    final loans = context.watch<LoansModel>();
+    final activeLoans = loans.items
+        .where((loan) => loan.status == LoanStatus.active)
+        .length;
+    final isLoading = books.isLoading || loans.isLoading;
+    final loadError = books.error ?? loans.error;
+
+    if (isLoading || loadError != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Профиль')),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppTheme.forestEmerald,
+                          strokeWidth: 1.5,
+                        ),
+                      )
+                    : ErrorView(
+                        message: loadError!,
+                        onRetry: () {
+                          context.read<BooksModel>().load();
+                          context.read<LoansModel>().load();
+                        },
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Симулировать сбой сети',
+                        style: AppTheme.sans(fontSize: 13),
+                      ),
+                    ),
+                    Switch(
+                      value: _simulateError,
+                      activeThumbColor: AppTheme.waxTerracotta,
+                      onChanged: (value) => _setSimulateError(context, value),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Профиль'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: colorScheme.primaryContainer,
-              child: Icon(
-                Icons.person,
-                size: 50,
-                color: colorScheme.onPrimaryContainer,
+      appBar: AppBar(title: const Text('Профиль')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
+        children: [
+          Text(
+            'ЧИТАТЕЛЬСКИЙ БИЛЕТ  /  04',
+            style: AppTheme.mono(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.charcoalMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Container(
+              width: 74,
+              height: 74,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.hairline),
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                size: 34,
+                color: AppTheme.forestEmerald,
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Надежда',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            'Надежда',
+            textAlign: TextAlign.center,
+            style: AppTheme.serifHeading(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
             ),
-            const Text('Студент • Технический Университет Молдовы'),
-            const SizedBox(height: 24),
-
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.book),
-                    title: const Text('Моих книг в каталоге'),
-                    trailing: Consumer<BooksModel>(
-                      builder: (context, books, _) => Text(
-                        '${books.myBooks.length}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.swap_horiz),
-                    title: const Text('Активных обменов'),
-                    trailing: Consumer<LoansModel>(
-                      builder: (context, loans, _) => Text(
-                        '${loans.count}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Text(
+            'СТУДЕНТ  ·  ТЕХНИЧЕСКИЙ УНИВЕРСИТЕТ МОЛДОВЫ',
+            textAlign: TextAlign.center,
+            style: AppTheme.mono(
+              fontSize: 8,
+              color: AppTheme.charcoalMuted,
+              letterSpacing: .45,
             ),
-            const SizedBox(height: 16),
-
-            // 9.2: Переключатель аварии — леса демонстрации
-            Card(
-              child: SwitchListTile(
-                secondary: Icon(
-                  Icons.wifi_off,
-                  color: _simulateError ? colorScheme.error : colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 25),
+          const Divider(height: 1, color: AppTheme.hairline),
+          _ProfileStat(
+            number: books.myBooks.length.toString().padLeft(2, '0'),
+            label: 'КНИГ В ЛИЧНОМ ФОНДЕ',
+          ),
+          const Divider(height: 1, color: AppTheme.hairline),
+          _ProfileStat(
+            number: activeLoans.toString().padLeft(2, '0'),
+            label: 'АКТИВНЫХ ОБМЕНОВ',
+          ),
+          const Divider(height: 1, color: AppTheme.hairline),
+          const SizedBox(height: 24),
+          Text(
+            'СЕТЬ И СИНХРОНИЗАЦИЯ',
+            style: AppTheme.mono(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.charcoalMuted,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Симулировать сбой сети',
+                  style: AppTheme.sans(fontSize: 14),
                 ),
-                title: const Text('Симулировать сбой сети'),
-                subtitle: const Text('Спровоцировать ошибку сервера (Err)'),
+              ),
+              Switch(
                 value: _simulateError,
-                onChanged: (value) {
-                  setState(() => _simulateError = value);
-                  context.read<MockBookRepository>().simulateError = value;
-                  context.read<MockLoanRepository>().simulateError = value;
-                },
+                activeThumbColor: AppTheme.waxTerracotta,
+                onChanged: (value) => _setSimulateError(context, value),
+              ),
+            ],
+          ),
+          Text(
+            'Показывать архивное сообщение при недоступном хранилище.',
+            style: AppTheme.sans(fontSize: 11, color: AppTheme.charcoalMuted),
+          ),
+          const SizedBox(height: 35),
+          OutlinedButton.icon(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout, size: 17),
+            label: Text(
+              'ВЫЙТИ ИЗ АККАУНТА',
+              style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w700),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.waxTerracotta,
+              side: const BorderSide(color: AppTheme.hairline),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            const Spacer(),
+class _ProfileStat extends StatelessWidget {
+  const _ProfileStat({required this.number, required this.label});
 
-            // Кнопка выхода из аккаунта
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: () => _logout(context),
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  'Выйти из аккаунта',
-                  style: TextStyle(color: Colors.red),
-                ),
+  final String number;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTheme.mono(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.charcoalMuted,
               ),
             ),
-          ],
-        ),
+          ),
+          Text(
+            number,
+            style: AppTheme.serifHeading(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.forestEmerald,
+            ),
+          ),
+        ],
       ),
     );
   }

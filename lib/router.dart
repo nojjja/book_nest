@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/my_library_screen.dart';
 import 'screens/community_books_screen.dart';
@@ -12,10 +13,7 @@ final router = GoRouter(
   initialLocation: '/login', // Старт с экрана входа
   routes: [
     // 1. Маршрут ВНЕ shell-а (у экрана входа нет нижней панели)
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
     // 2. Постоянная оболочка вкладок через indexedStack
     StatefulShellRoute.indexedStack(
@@ -33,6 +31,11 @@ final router = GoRouter(
                 GoRoute(
                   path: 'add',
                   builder: (context, state) => const EditBookScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) =>
+                      EditBookScreen(bookId: state.pathParameters['id']!),
                 ),
                 // Относительный путь: /library/:id
                 GoRoute(
@@ -56,9 +59,8 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: ':id',
-                  builder: (context, state) => BookDetailsScreen(
-                    id: state.pathParameters['id']!,
-                  ),
+                  builder: (context, state) =>
+                      BookDetailsScreen(id: state.pathParameters['id']!),
                 ),
               ],
             ),
